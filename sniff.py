@@ -12,14 +12,14 @@ def sniff(url: str, mode: str, duration: int = 15) -> str:
 
     if mode == "buffer":
         data = capturer.to_buffer(duration)
-        song = client.identify_from_buffer(data)
+        songs_data = client.identify_from_buffer(data)
     elif mode == "file":
         file = capturer.to_file(duration=duration)
-        song = client.identify_from_file(file)
+        songs_data = client.identify_from_file(file)
     else:
         raise ValueError("Invalid mode: choose 'file' or 'buffer'")
 
-    return song
+    return client.analyze_songs(songs_data)
 
 
 if __name__ == "__main__":

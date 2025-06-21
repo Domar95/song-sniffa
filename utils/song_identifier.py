@@ -4,6 +4,7 @@ import hmac
 import os
 import requests
 import time
+import json
 
 from dotenv import load_dotenv
 
@@ -58,6 +59,48 @@ class ACRClient:
         }
 
         return self._send_request(data)
+
+    def analyze_songs(self, songs_data: str) -> dict:
+        """Analyzes song result."""
+
+        try:
+            response = json.loads(songs_data)
+        except ValueError as e:
+            raise ValueError(f"Invalid JSON response: {e}") from e
+
+        songs = response.get("metadata", {}).get("music", [])
+
+        filtered_songs = []
+
+        for song in songs:
+            if song.get("score", 0) >= 70:
+                filtered_songs.append(
+                    {
+                        "title": song.get("title", "Unknown title"),
+                        "artists": [
+                            artist.get("name", "Unknown artist")
+                            for artist in song.get("artists", [])
+                        ],
+                        "album": song.get("album", {}).get("name", "Unknown album"),
+                    }
+                )
+
+        return self._format_response(filtered_songs)
+
+    def _format_response(self, songs: []) -> str:
+        """Formats the response to a readable string."""
+
+        if not songs:
+            return "Kappa, no songs identified."
+
+        formatted_songs = []
+        for song in songs:
+            title = song.get("title", "Unknown title")
+            artists = ", ".join(song.get("artists", ["Unknown artist"]))
+            album = song.get("album", "Unknown album")
+            formatted_songs.append(f"{artists} - {title} (album: {album})")
+
+        return "  or  ".join(set(formatted_songs))
 
     def _generate_signature(self, timestamp: float) -> str:
         string_to_sign = "\n".join(
