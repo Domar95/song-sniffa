@@ -1,4 +1,5 @@
 import time
+import io
 
 from streamlink import Streamlink
 
@@ -26,3 +27,26 @@ def capture_audio_sample(
             f.write(chunk)
 
     print(f"Sample saved to {output_path}.")
+
+
+def capture_audio_buffer(url: str, duration: int = 15) -> bytes:
+    session = Streamlink()
+    streams = session.streams(url)
+    stream = streams.get("audio_only")
+
+    if not stream:
+        raise RuntimeError("No audio stream available")
+
+    buffer = io.BytesIO()
+    start = time.time()
+
+    with stream.open() as fd:
+        while time.time() - start < duration:
+            chunk = fd.read(4096)
+            if not chunk:
+                break
+            buffer.write(chunk)
+
+    print(f"Captured audio buffer of size {buffer.tell()} bytes.")
+
+    return buffer.getvalue()
