@@ -8,131 +8,84 @@ import time
 from dotenv import load_dotenv
 
 
-def identify_song(file_path: str = "samples/sniffa_sample.mp3") -> str:
-    """Sends an audio file to the ACRCloud service for recognition."""
+class ACRClient:
+    def __init__(self):
+        # You can get your access_key and access_secret from https://console.acrcloud.com
+        load_dotenv()
+        self.access_key = os.getenv("ACR_ACCESS_KEY")
+        self.access_secret = os.getenv("ACR_SECRET_KEY")
+        self.host = os.getenv("ACR_HOST")
+        self.timeout = 10
+        self.http_uri = "/v1/identify"
+        self.data_type = "audio"
+        self.signature_version = "1"
 
-    # You can get your access_key and access_secret from https://console.acrcloud.com
-    config = _get_config()
-    access_key = config.get("access_key")
-    access_secret = config.get("access_secret")
-    requrl = config.get("host")
+    def identify_from_file(self, file_path: str = "samples/sniffa_sample.mp3") -> str:
+        """Sends an audio file to the ACRCloud service for recognition."""
 
-    http_method = "POST"
-    http_uri = "/v1/identify"
-    # default is "fingerprint", it's for recognizing fingerprint,
-    # if you want to identify audio, please change data_type="audio"
-    data_type = "audio"
-    signature_version = "1"
-    timestamp = time.time()
+        timestamp = time.time()
+        signature = self._generate_signature(timestamp)
+        sample_bytes = os.path.getsize(file_path)
 
-    string_to_sign = (
-        http_method
-        + "\n"
-        + http_uri
-        + "\n"
-        + access_key
-        + "\n"
-        + data_type
-        + "\n"
-        + signature_version
-        + "\n"
-        + str(timestamp)
-    )
+        files = [("sample", (file_path, open(file_path, "rb"), "audio/mpeg"))]
+        data = {
+            "access_key": self.access_key,
+            "sample_bytes": sample_bytes,
+            "timestamp": str(timestamp),
+            "signature": signature,
+            "data_type": self.data_type,
+            "signature_version": self.signature_version,
+        }
 
-    sign = base64.b64encode(
-        hmac.new(
-            access_secret.encode("ascii"),
-            string_to_sign.encode("ascii"),
-            digestmod=hashlib.sha1,
-        ).digest()
-    ).decode("ascii")
+        return self._send_request(data, files)
 
-    # suported file formats: mp3,wav,wma,amr,ogg, ape,acc,spx,m4a,mp4,FLAC, etc
-    # File size: < 1M , You'de better cut large file to small file, within 15 seconds data size is better
-    sample_bytes = os.path.getsize(file_path)
+    def identify_from_buffer(self, audio_data: bytes) -> str:
+        """Sends audio data to the ACRCloud service for recognition."""
 
-    files = [("sample", (file_path, open(file_path, "rb"), "audio/mpeg"))]
-    data = {
-        "access_key": access_key,
-        "sample_bytes": sample_bytes,
-        "timestamp": str(timestamp),
-        "signature": sign,
-        "data_type": data_type,
-        "signature_version": signature_version,
-    }
+        timestamp = time.time()
+        signature = self._generate_signature(timestamp)
 
-    r = requests.post(requrl, files=files, data=data)
-    r.encoding = "utf-8"
-    return r.text
+        encoded_audio = base64.b64encode(audio_data).decode("ascii")
 
+        data = {
+            "access_key": self.access_key,
+            "sample_bytes": len(audio_data),
+            "sample": encoded_audio,
+            "timestamp": str(timestamp),
+            "signature": signature,
+            "data_type": self.data_type,
+            "signature_version": self.signature_version,
+        }
 
-def identify_song_from_buffer(audio_data: bytes) -> str:
-    """Sends an audio file to the ACRCloud service for recognition."""
+        return self._send_request(data)
 
-    # You can get your access_key and access_secret from https://console.acrcloud.com
-    config = _get_config()
-    access_key = config.get("access_key")
-    access_secret = config.get("access_secret")
-    requrl = config.get("host")
+    def _generate_signature(self, timestamp: float) -> str:
+        string_to_sign = "\n".join(
+            [
+                "POST",
+                self.http_uri,
+                self.access_key,
+                self.data_type,
+                self.signature_version,
+                str(timestamp),
+            ]
+        )
 
-    http_method = "POST"
-    http_uri = "/v1/identify"
-    # default is "fingerprint", it's for recognizing fingerprint,
-    # if you want to identify audio, please change data_type="audio"
-    data_type = "audio"
-    signature_version = "1"
-    timestamp = time.time()
+        return base64.b64encode(
+            hmac.new(
+                self.access_secret.encode("ascii"),
+                string_to_sign.encode("ascii"),
+                digestmod=hashlib.sha1,
+            ).digest()
+        ).decode("ascii")
 
-    string_to_sign = (
-        http_method
-        + "\n"
-        + http_uri
-        + "\n"
-        + access_key
-        + "\n"
-        + data_type
-        + "\n"
-        + signature_version
-        + "\n"
-        + str(timestamp)
-    )
+    def _send_request(self, data: dict, files: list = None) -> str:
+        """Sends a POST request."""
 
-    sign = base64.b64encode(
-        hmac.new(
-            access_secret.encode("ascii"),
-            string_to_sign.encode("ascii"),
-            digestmod=hashlib.sha1,
-        ).digest()
-    ).decode("ascii")
-
-    encoded_audio = base64.b64encode(audio_data).decode("ascii")
-
-    # suported file formats: mp3,wav,wma,amr,ogg, ape,acc,spx,m4a,mp4,FLAC, etc
-    # File size: < 1M , You'de better cut large file to small file, within 15 seconds data size is better
-
-    data = {
-        "access_key": access_key,
-        "sample_bytes": len(audio_data),
-        "sample": encoded_audio,
-        "timestamp": str(timestamp),
-        "signature": sign,
-        "data_type": data_type,
-        "signature_version": signature_version,
-    }
-
-    r = requests.post(requrl, data=data)
-    r.encoding = "utf-8"
-    return r.text
-
-
-def _get_config() -> dict:
-    """Load configuration from environment variables."""
-
-    load_dotenv()
-
-    return {
-        "host": os.getenv("ACR_HOST"),
-        "access_key": os.getenv("ACR_ACCESS_KEY"),
-        "access_secret": os.getenv("ACR_SECRET_KEY"),
-        "timeout": 10,
-    }
+        response = requests.post(
+            self.host,
+            data=data,
+            files=files,
+        )
+        response.encoding = "utf-8"
+        return response.text

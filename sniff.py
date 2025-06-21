@@ -1,5 +1,5 @@
-from utils.audio_sampler import capture_audio_sample, capture_audio_buffer
-from utils.song_identifier import identify_song, identify_song_from_buffer
+from utils.audio_capturer import AudioCapturer
+from utils.song_identifier import ACRClient
 
 url = "https://www.twitch.tv/sniffa"
 
@@ -7,11 +7,17 @@ url = "https://www.twitch.tv/sniffa"
 def sniff(url: str) -> str:
     """Captures an audio sample from stream and identifies the song."""
 
-    # capture_audio_sample(url)
-    # song = identify_song()
+    # Initialize the AudioCapturer & ACRClient for song identification
+    capturer = AudioCapturer(url)
+    client = ACRClient()
 
-    data = capture_audio_buffer(url)
-    song = identify_song_from_buffer(data)
+    # Capture audio as mp3 and identify through file
+    file = capturer.to_file()
+    song = client.identify_from_file(file)
+
+    # Capture audio as bytes buffer and identify through buffer
+    # data = capturer.to_buffer()
+    # song = client.identify_from_buffer(data)
 
     print(song)
 
