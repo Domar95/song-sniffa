@@ -91,7 +91,7 @@ class ACRClient:
         """Formats the response to a readable string."""
 
         if not songs:
-            return "Kappa, no songs identified."
+            return ""
 
         formatted_songs = []
         for song in songs:
