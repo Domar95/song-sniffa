@@ -11,7 +11,7 @@ bot = commands.Bot(
 )
 
 
-@bot.command(name="sniffa")
+@bot.command(name="sniffa", aliases=["song"])
 async def song_command(ctx):
     from sniff import sniff
 
@@ -22,7 +22,7 @@ async def song_command(ctx):
     )
 
     if not result:
-        result = "Kappa no song sniffed"
+        return
     else:
         result = f"sniffed song: {result}"
 
