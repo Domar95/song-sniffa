@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import os
+from typing import Dict, List, Optional
 import requests
 import time
 import json
@@ -87,11 +88,11 @@ class ACRClient:
 
         return self._format_response(filtered_songs)
 
-    def _format_response(self, songs: []) -> str:
+    def _format_response(self, songs: List[Dict]) -> Optional[str]:
         """Formats the response to a readable string."""
 
         if not songs:
-            return ""
+            return None
 
         formatted_songs = []
         for song in songs:
