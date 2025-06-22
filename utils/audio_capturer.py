@@ -48,6 +48,8 @@ class AudioCapturer:
 
     def _get_stream(self):
         """Initialize the audio stream."""
+
+        self.session.set_option("twitch-disable-ads", True)
         streams = self.session.streams(self.url)
         stream = streams.get("audio_only")
         if not stream:
