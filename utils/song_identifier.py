@@ -94,14 +94,22 @@ class ACRClient:
         if not songs:
             return None
 
-        formatted_songs = []
+        unique_songs = {}
+
         for song in songs:
             title = song.get("title", "Unknown title")
             artists = ", ".join(song.get("artists", ["Unknown artist"]))
             album = song.get("album", "Unknown album")
-            formatted_songs.append(f"{artists} - {title} (album: {album})")
 
-        return "  or  ".join(set(formatted_songs))
+            # Normalize: remove special chars, extra spaces
+            normalized_title = "".join(c.upper() for c in title if c.isalnum())
+            normalized_artists = "".join(c.upper() for c in artists if c.isalnum())
+            unique_key = (normalized_title, normalized_artists)
+
+            if unique_key not in unique_songs:
+                unique_songs[unique_key] = f"{artists} - {title} (album: {album})"
+
+        return "  or  ".join(unique_songs.values())
 
     def _generate_signature(self, timestamp: float) -> str:
         string_to_sign = "\n".join(
