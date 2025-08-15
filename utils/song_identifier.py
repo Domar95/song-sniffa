@@ -107,7 +107,7 @@ class ACRClient:
             unique_key = (normalized_title, normalized_artists)
 
             if unique_key not in unique_songs:
-                unique_songs[unique_key] = f"{artists} - {title} (album: {album})"
+                unique_songs[unique_key] = f"{title} by {artists}"
 
         return "  or  ".join(unique_songs.values())
 
