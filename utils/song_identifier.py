@@ -74,17 +74,14 @@ class ACRClient:
         filtered_songs = []
 
         for song in songs:
-            if song.get("score", 0) >= 70:
-                filtered_songs.append(
-                    {
-                        "title": song.get("title", "Unknown title"),
-                        "artists": [
-                            artist.get("name", "Unknown artist")
-                            for artist in song.get("artists", [])
-                        ],
-                        "album": song.get("album", {}).get("name", "Unknown album"),
-                    }
-                )
+            filtered_songs.append(
+                {
+                    "title": song.get("title", "Unknown title"),
+                    "artists": [artist.get("name", "Unknown artist") for artist in song.get("artists", [])],
+                    "album": song.get("album", {}).get("name", "Unknown album"),
+                    "score": song["score"],
+                }
+            )
 
         return self._format_response(filtered_songs)
 
@@ -99,17 +96,28 @@ class ACRClient:
         for song in songs:
             title = song.get("title", "Unknown title")
             artists = ", ".join(song.get("artists", ["Unknown artist"]))
-            album = song.get("album", "Unknown album")
+            album = song.get("album", "Unknown album")  # not used for now
+            score = song.get("score", 0)
 
             # Normalize: remove special chars, extra spaces
             normalized_title = "".join(c.upper() for c in title if c.isalnum())
             normalized_artists = "".join(c.upper() for c in artists if c.isalnum())
             unique_key = (normalized_title, normalized_artists)
 
-            if unique_key not in unique_songs:
-                unique_songs[unique_key] = f"{title} by {artists}"
+            if unique_key not in unique_songs or score > unique_songs[unique_key]["score"]:
+                unique_songs[unique_key] = {
+                    "formatted": f"{title} by {artists}",
+                    "score": score,
+                }
 
-        return "  or  ".join(unique_songs.values())
+            max_score = max(song_data["score"] for song_data in unique_songs.values())
+
+            # Get all songs with the highest score
+            highest_scored_songs = [
+                song_data["formatted"] for song_data in unique_songs.values() if song_data["score"] == max_score
+            ]
+
+            return "  or  ".join(highest_scored_songs)
 
     def _generate_signature(self, timestamp: float) -> str:
         string_to_sign = "\n".join(
