@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "song-sniffa"
+version = "0.1.0"
+dependencies = [
+  "aiohttp==3.12.13",
+  "attrs==25.3.0",
+  "certifi==2025.6.15",
+  "charset-normalizer==3.4.2",
+  "frozenlist==1.7.0",
+  "idna==3.10",
+  "multidict==6.5.0",
+  "requests==2.32.4",
+  "streamlink==7.4.0",
+  "typing_extensions==4.14.0",
+  "urllib3==2.5.0",
+  "yarl==1.20.1"
+]
+requires-python = ">=3.8"
+authors = [
+{name = "Wiktor Domaradzki", email = "wiktor.domaradzki1@gmail.com"}
+]
+maintainers = [
+  {name = "Wiktor Domaradzki", email = "wiktor.domaradzki1@gmail.com"}
+]
+description = "Tool for identifying songs in Twitch streams via audio recognition."
+readme = "README.md"
+license = "MIT"
+keywords = ["song", "stream", "twitch", "audio", "recognition"]
+
+[project.urls]
+Repository = "https://github.com/Domar95/song-sniffa.git"
